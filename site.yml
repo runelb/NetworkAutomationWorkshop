@@ -2,3 +2,8 @@
 - hosts: all
   gather_facts: false
   tasks:
+
+  - name: Deploy HAproxy
+
+
+  - name: Deploy NginX
