@@ -4,6 +4,10 @@
   tasks:
 
   - name: Deploy HAproxy
+  # sudo apt install haproxy
 
 
   - name: Deploy NginX
+
+
+  - name: Test three requests, webservers A, B, and C should reply
