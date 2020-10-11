@@ -25,20 +25,19 @@
         state: present
 
     - name: Copy NginX configuration
-        copy:
-          src: nginx.conf
-          dest: /etc/nginx/nginx.conf
+      copy:
+        src: nginx.conf
+        dest: /etc/nginx/nginx.conf
 
     - name: Copy PHP application
-        copy:
-          src: index.php
-          dest: /etc/php/index.php
+      copy:
+        src: index.php
+        dest: /var/www/html/index.php
 
-    # - name: Start NginX server
-    #   systemd:
-    #     name: nginx
-    #     enabled: yes
-    #     state: started
+    - name: Start NginX server
+      service:
+        name: nginx
+        state: started
 
     # - name: Wait for server to start
     #   wait_for:
