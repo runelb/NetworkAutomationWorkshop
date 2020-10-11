@@ -9,6 +9,11 @@
         name: haproxy
         state: present
 
+    - name: Copy HAproxy configuration
+      copy:
+        src: haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+
 - hosts: webservers
   gather_facts: true
   become: yes
@@ -18,8 +23,16 @@
       package:
         name: nginx
         state: present
-    
-    # - name: Place index file. Use role??
+
+    - name: Copy NginX configuration
+        copy:
+          src: nginx.conf
+          dest: /etc/nginx/nginx.conf
+
+    - name: Copy PHP application
+        copy:
+          src: index.php
+          dest: /etc/php/index.php
 
     # - name: Start NginX server
     #   systemd:
