@@ -1,10 +1,11 @@
 ---
-- hosts: devhaproxy
+- name: Deploy HAproxy
+  hosts: devhaproxy
   gather_facts: no
   become: yes
   tags: haproxy
   tasks:
-    - name: Deploy HAproxy
+    - name: Install HAproxy
       package:
         name: haproxy
         state: present
@@ -14,7 +15,8 @@
         src: haproxy.cfg
         dest: /etc/haproxy/haproxy.cfg
 
-- hosts: webservers
+- name: Deploy NginX and PHP
+  hosts: webservers
   gather_facts: no
   become: yes
   tags: webservers
@@ -67,18 +69,35 @@
       wait_for:
         port: 80
 
-# - hosts: devhaproxy
-#   gather_facts: no
-#   become: yes
-#   tags: devhaproxy
-#   tasks:
+# testing
+- name: Finding the IP of devhaproxy for testing
+  hosts: devhaproxy   # devhaproxy or bastion sends a request to public IP of devhaproxy
+  gather_facts: yes
+  become: yes
+  tags: devhaproxy
+  tasks:
+    - name: Identify public IP of devHAproxy (Ansible goes trhough the bastion, and only knows devHAproxy's private IP address)
+      uri:
+        url: https://api.ipify.org?format=json
+        return_content: yes
+      register: ip_response
+    
+    - name: print IP
+      debug: var=ip_response
+
+- name: Testing
+  hosts: localhost
+  tasks:
+    - name: First GET request
+      shell: msg="curl {{devHA_IP}}"
+
+# ansible -m debug -a msg="{{ '-'.join(('list', 'joined', 'together')) }}" localhost
+
     # - name: First GET request
-    #   get_url:
-    #     url: 10.6.0.5
-    # - name: First GET request
-    #   uri:
-    #     url: http://www.example.com
-    #     return_content: yes
-    #   register: webpage
-    #   debug:
-    #     var: webpage
+    #   shell: msg="curl {{devHA_IP}}"
+
+    # - name: Second GET request
+    #   shell: 'curl ' + devHA_IP
+
+    # - name: Third GET request
+    #   shell: 'curl ' + devHA_IP
