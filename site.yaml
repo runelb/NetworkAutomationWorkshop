@@ -1,6 +1,6 @@
 ---
 - hosts: devhaproxy
-  gather_facts: true
+  gather_facts: no
   become: yes
   tags: haproxy
   tasks:
@@ -15,34 +15,70 @@
         dest: /etc/haproxy/haproxy.cfg
 
 - hosts: webservers
-  gather_facts: true
+  gather_facts: no
   become: yes
   tags: webservers
   tasks:
-    - name: Deploy NginX
+    - name: Install NginX
       package:
         name: nginx
         state: present
 
-    - name: Copy NginX configuration
+    - name: Start NginX
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+    
+    - name: Install PHP-fpm
+      package:
+        name: php7.4-fpm
+        state: present
+      
+    - name: Start PHP
+      service:
+        name: php7.4-fpm
+        state: started
+        enabled: yes
+
+    - name: Copy NginX site configuration
       copy:
         src: nginx.conf
-        dest: /etc/nginx/nginx.conf
+        dest: /etc/nginx/sites-enabled/default
 
     - name: Copy PHP application
       copy:
         src: index.php
         dest: /var/www/html/index.php
 
-    - name: Start NginX server
+    # restart PHP before nginx, could cause a problem otherwise
+    - name: Restart PHP
+      service:
+        name: php7.4-fpm
+        state: restarted
+    
+    - name: Restart NginX server
       service:
         name: nginx
-        state: started
+        state: restarted
 
-    # - name: Wait for server to start
-    #   wait_for:
-    #     port: 80
+    # likely not necessary, wait time is probably very quick
+    - name: Wait for server to start
+      wait_for:
+        port: 80
 
-    # block:
-    #   - name: Test three requests, webservers A, B, and C should reply
-    # http get request
+# - hosts: devhaproxy
+#   gather_facts: no
+#   become: yes
+#   tags: devhaproxy
+#   tasks:
+    # - name: First GET request
+    #   get_url:
+    #     url: 10.6.0.5
+    # - name: First GET request
+    #   uri:
+    #     url: http://www.example.com
+    #     return_content: yes
+    #   register: webpage
+    #   debug:
+    #     var: webpage
