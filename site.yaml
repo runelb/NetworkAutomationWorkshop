@@ -70,11 +70,11 @@
         port: 80
 
 # testing
-- name: Finding the IP of devhaproxy for testing
+- name: Finding the IP of devHAproxy for testing
   hosts: devhaproxy   # devhaproxy or bastion sends a request to public IP of devhaproxy
   gather_facts: yes
   become: yes
-  tags: devhaproxy
+  tags: testing
   tasks:
     - name: Identify public IP of devHAproxy (Ansible goes trhough the bastion, and only knows devHAproxy's private IP address)
       uri:
@@ -82,22 +82,55 @@
         return_content: yes
       register: ip_response
     
-    - name: print IP
-      debug: var=ip_response
+    - name: Print IP
+      debug:
+        msg: "{{ ip_response.json.ip }}"
+    
+    - name: Store IP address
+      set_fact:
+        devhaproxy_ip: "{{ ip_response.json.ip }}"
+        # # quote filter to avoid injection, devhaproxy's ip comes from outside
+
 
 - name: Testing
   hosts: localhost
+  gather_facts: yes
+  tags: testing
   tasks:
+    - name: Print devHAproxy's IP, but on localhost this time
+      debug: var=hostvars['devhaproxy']['devhaproxy_ip']
+        
+    - name: Save devHAproxy's public IP address on localhost
+      # # quote filter to avoid injection, devhaproxy's ip comes from outside
+      shell: echo {{ hostvars['devhaproxy']['devhaproxy_ip'] | quote }}
+      register: devhaproxy_ip
+
+    - name: Confirm devhaproxy_ip
+      debug:
+        var: devhaproxy_ip.stdout
+
+    # - name: Ping request
+    #   # # quote filter to avoid injection, devhaproxy's ip comes from outside
+    #   shell: ping -c 4 {{ devhaproxy_ip.stdout | quote }}
+    #   register: ping_out
+    
+    # - name: result
+    #   debug: msg="{{ ping_out.stdout_lines }}"
+
     - name: First GET request
-      shell: msg="curl {{devHA_IP}}"
+      # # quote filter to avoid injection, devhaproxy's ip comes from outside
+      shell: curl {{ devhaproxy_ip.stdout | quote }}
+      args:
+        warn: no
 
-# ansible -m debug -a msg="{{ '-'.join(('list', 'joined', 'together')) }}" localhost
+    - name: Second GET request
+      # # quote filter to avoid injection, devhaproxy's ip comes from outside
+      shell: curl {{ devhaproxy_ip.stdout | quote }}
+      args:
+        warn: no
 
-    # - name: First GET request
-    #   shell: msg="curl {{devHA_IP}}"
-
-    # - name: Second GET request
-    #   shell: 'curl ' + devHA_IP
-
-    # - name: Third GET request
-    #   shell: 'curl ' + devHA_IP
+    - name: Third GET request
+      # # quote filter to avoid injection, devhaproxy's ip comes from outside
+      shell: curl {{ devhaproxy_ip.stdout | quote }}
+      args:
+        warn: no
