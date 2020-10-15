@@ -89,8 +89,6 @@
     - name: Store IP address
       set_fact:
         devhaproxy_ip: "{{ ip_response.json.ip }}"
-        # # quote filter to avoid injection, devhaproxy's ip comes from outside
-
 
 - name: Testing
   hosts: localhost
@@ -105,9 +103,15 @@
       shell: echo {{ hostvars['devhaproxy']['devhaproxy_ip'] | quote }}
       register: devhaproxy_ip
 
-    - name: Confirm devhaproxy_ip
+    - name: Double check the devhaproxy_ip variable is a valid IPv4 address
       debug:
-        var: devhaproxy_ip.stdout
+        msg: "{{ devhaproxy_ip.stdout }}  Looks like an IP address, not a shell command"
+      when:
+        - devhaproxy_ip.stdout.split(".") | length == 4
+        - devhaproxy_ip.stdout.split(".")[0] | int < 256
+        - devhaproxy_ip.stdout.split(".")[1] | int < 256
+        - devhaproxy_ip.stdout.split(".")[2] | int < 256
+        - devhaproxy_ip.stdout.split(".")[3] | int < 256
 
     # - name: Ping request
     #   # # quote filter to avoid injection, devhaproxy's ip comes from outside
