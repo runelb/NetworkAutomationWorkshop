@@ -1,19 +1,45 @@
 ---
+- name: Collect IP addresses from webservers
+  hosts: webservers
+  gather_facts: yes
+  tags: haproxy
+  tasks:
+    - name: Show IPs of webservers, gathering facts for devHAproxy
+      debug:
+        var: hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+
 - name: Deploy HAproxy
   hosts: devhaproxy
   gather_facts: no
   become: yes
   tags: haproxy
   tasks:
-    - name: Install HAproxy
-      package:
-        name: haproxy
-        state: present
+    # - name: Install HAproxy
+    #   package:
+    #     name: haproxy
+    #     state: present
 
-    - name: Copy HAproxy configuration
-      copy:
-        src: haproxy.cfg
-        dest: /etc/haproxy/haproxy.cfg
+    # # - name: Copy HAproxy configuration
+    # #   copy:
+    # #     src: haproxy.cfg
+    # #     dest: /etc/haproxy/haproxy.cfg
+
+    - name: Write the webservers private IP addresses in haproxy
+      debug: msg="this doesn't exist yet"
+
+    - name: Server A
+      debug: var=hostvars['devA']['ansible_all_ipv4_addresses']
+
+    - name: Server B
+      debug: var=hostvars['devB']['ansible_all_ipv4_addresses']
+
+    - name: Server C
+      debug: var=hostvars['devC']['ansible_all_ipv4_addresses']
+
+    # - name: Restart HAproxy
+    #   service:
+    #     name: haproxy
+    #     state: restarted
 
 - name: Deploy NginX and PHP
   hosts: webservers
