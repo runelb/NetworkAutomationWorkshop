@@ -5,4 +5,13 @@ Includes:
 site.yaml       - main Ansible file
 nginx.conf      - default nginx server configuration (not to be confused with configurations for nginx itself)
 index.php       - PHP file
-haproxy.cfg     - configuration file ofr HAProxy
+haproxy.cfg     - configuration file for HAProxy
+
+
+Works on a network like so:
+(Internet)--->HAproxy
+             (internal network using private address range)
+              +--->A
+              +--->B
+              +--->C
+(Internet)--->Bastion
