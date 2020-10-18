@@ -1,0 +1,8 @@
+Ansible playbook for installing three NginX backend servers, running a PHP application, load balanced by a HAProxy frontend server
+
+
+Includes:
+site.yaml       - main Ansible file
+nginx.conf      - default nginx server configuration (not to be confused with configurations for nginx itself)
+index.php       - PHP file
+haproxy.cfg     - configuration file ofr HAProxy
