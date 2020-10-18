@@ -14,32 +14,62 @@
   become: yes
   tags: haproxy
   tasks:
-    # - name: Install HAproxy
-    #   package:
-    #     name: haproxy
-    #     state: present
-
-    # # - name: Copy HAproxy configuration
-    # #   copy:
-    # #     src: haproxy.cfg
-    # #     dest: /etc/haproxy/haproxy.cfg
-
-    - name: Write the webservers private IP addresses in haproxy
-      debug: msg="this doesn't exist yet"
-
-    - name: Server A
-      debug: var=hostvars['devA']['ansible_all_ipv4_addresses']
-
-    - name: Server B
-      debug: var=hostvars['devB']['ansible_all_ipv4_addresses']
-
-    - name: Server C
-      debug: var=hostvars['devC']['ansible_all_ipv4_addresses']
-
-    # - name: Restart HAproxy
+    - name: Install HAproxy
+      package:
+        name: haproxy
+        state: present
+    
+    # - name: Start HAProxy # HAproxy starts by the install command already
     #   service:
     #     name: haproxy
-    #     state: restarted
+    #     state: started
+    #     enabled: yes
+
+    - name: Copy HAproxy configuration
+      copy:
+        src: haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+
+    # - name: Server A
+    #   debug: var=hostvars['devA']['ansible_all_ipv4_addresses']
+
+    # - name: Server B
+    #   debug: var=hostvars['devB']['ansible_all_ipv4_addresses']
+
+    # - name: Server C
+    #   debug: var=hostvars['devC']['ansible_all_ipv4_addresses']
+
+    - name: Write the webservers private IP addresses in haproxy config
+      lineinfile:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '^        server devA address:80'
+        line: "        server devA {{ hostvars['devA']['ansible_all_ipv4_addresses'] | join('') }}:80 check"
+        state: present
+
+    - name: Write the webservers private IP addresses in haproxy config
+      lineinfile:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '^        server devB address:80'
+        line: "        server devB {{ hostvars['devB']['ansible_all_ipv4_addresses'] | join('') }}:80 check"
+        state: present
+
+    - name: Write the webservers private IP addresses in haproxy config
+      lineinfile:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: '^        server devC address:80'
+        line: "        server devC {{ hostvars['devC']['ansible_all_ipv4_addresses'] | join('') }}:80 check"
+        state: present
+
+    # - name: Start HAproxy # HAproxy starts by the install command already
+    #   service:
+    #     name: haproxy
+    #     state: started
+    #     enabled: yes
+
+    - name: Restart HAproxy
+      service:
+        name: haproxy
+        state: restarted
 
 - name: Deploy NginX and PHP
   hosts: webservers
@@ -102,15 +132,15 @@
   become: yes
   tags: testing
   tasks:
-    - name: Identify public IP of devHAproxy (Ansible goes trhough the bastion, and only knows devHAproxy's private IP address)
+    - name: Discover the public IP of devHAproxy (Ansible goes trhough the bastion, and only knows devHAproxy's private IP address)
       uri:
         url: https://api.ipify.org?format=json
         return_content: yes
       register: ip_response
     
-    - name: Print IP
-      debug:
-        msg: "{{ ip_response.json.ip }}"
+    # - name: Print IP
+    #   debug:
+    #     msg: "{{ ip_response.json.ip }}"
     
     - name: Store IP address
       set_fact:
@@ -121,8 +151,8 @@
   gather_facts: yes
   tags: testing
   tasks:
-    - name: Print devHAproxy's IP, but on localhost this time
-      debug: var=hostvars['devhaproxy']['devhaproxy_ip']
+    # - name: Print devHAproxy's IP, but on localhost this time
+    #   debug: var=hostvars['devhaproxy']['devhaproxy_ip']
         
     - name: Save devHAproxy's public IP address on localhost
       # # quote filter to avoid injection, devhaproxy's ip comes from outside
@@ -131,7 +161,7 @@
 
     - name: Double check the devhaproxy_ip variable is a valid IPv4 address
       debug:
-        msg: "{{ devhaproxy_ip.stdout }}  Looks like an IP address, not a shell command"
+        msg: "{{ devhaproxy_ip.stdout }}  Looks like an IP address"
       when:
         - devhaproxy_ip.stdout.split(".") | length == 4
         - devhaproxy_ip.stdout.split(".")[0] | int < 256
@@ -152,15 +182,30 @@
       shell: curl {{ devhaproxy_ip.stdout | quote }}
       args:
         warn: no
+      register: devA_output
+    
+    - name: First webserver reply!
+      debug:
+        var: devA_output.stdout
 
     - name: Second GET request
       # # quote filter to avoid injection, devhaproxy's ip comes from outside
       shell: curl {{ devhaproxy_ip.stdout | quote }}
       args:
         warn: no
+      register: devB_output
+    
+    - name: Second webserver reply!
+      debug:
+        var: devB_output.stdout
 
     - name: Third GET request
       # # quote filter to avoid injection, devhaproxy's ip comes from outside
       shell: curl {{ devhaproxy_ip.stdout | quote }}
       args:
         warn: no
+      register: devC_output
+    
+    - name: Third webserver reply!
+      debug:
+        var: devC_output.stdout
