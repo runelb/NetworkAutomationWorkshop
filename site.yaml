@@ -14,10 +14,14 @@
   become: yes
   tags: haproxy
   tasks:
-    - name: Install HAproxy
-      package:
+    - name: Install/update HAproxy
+      apt:
         name: haproxy
-        state: present
+        update_cache: yes
+        state: latest
+      # package:
+      #   name: haproxy
+      #   state: present
     
     # - name: Start HAProxy # HAproxy starts by the install command already
     #   service:
@@ -77,10 +81,14 @@
   become: yes
   tags: webservers
   tasks:
-    - name: Install NginX
-      package:
+    - name: Install/update NginX
+      apt:
         name: nginx
-        state: present
+        update_cache: yes
+        state: latest
+      # package:
+      #   name: nginx
+      #   state: present
 
     - name: Start NginX
       service:
@@ -88,10 +96,20 @@
         state: started
         enabled: yes
     
-    - name: Install PHP-fpm
-      package:
+    - name: Install/update PHP
+      apt:
+        name: php7.4-cli
+        update_cache: yes
+        state: latest
+
+    - name: Install/update PHP-fpm
+      apt:
         name: php7.4-fpm
-        state: present
+        update_cache: yes
+        state: latest
+      # package:
+      #   name: php7.4-fpm
+      #   state: present
       
     - name: Start PHP
       service:
